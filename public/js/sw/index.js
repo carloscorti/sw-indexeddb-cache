@@ -1,11 +1,12 @@
 self.addEventListener('fetch', (event) => {
   // console.log(event.request);
   // console.log('just hello hello¡¡:):)');
-  event.respondWith(new Response('Hello <b class=a-winner-is-me>world</b>', {
-      headers: {
-        'Content-Type': 'text/html; charset=utf-8',
-      }
-    })
-  );
-
+  const urlEnd = event.request.url.split('.').pop();
+  console.log(urlEnd);
+  if (urlEnd == 'jpg') {
+    console.log('si')
+    event.respondWith(
+      fetch('imgs/dr-evil.gif')
+    );
+  }
 });
