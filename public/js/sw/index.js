@@ -18,6 +18,7 @@ self.addEventListener('fetch', (event) => {
     fetch(event.request).then(res => {
       if(res.status==404){
         console.log('not found');
+        return fetch('imgs/dr-evil.gif');
       }
       return res;
     }).catch((err)=>{
