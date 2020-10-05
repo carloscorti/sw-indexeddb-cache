@@ -11,7 +11,6 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open('wittr-static-v1').then(cache => cache.addAll(urlsToCache))
   );
-
 });
 
 self.addEventListener('fetch', (event) => {
