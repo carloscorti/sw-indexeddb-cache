@@ -15,8 +15,12 @@ export default function IndexController(container) {
 // register service wotrker
 IndexController.prototype._registerServiceWorker = () => {
   if (navigator.serviceWorker) {
-    navigator.serviceWorker.register('/sw.js');
+    navigator.serviceWorker.register('/sw.js') // regards sw.js in build folder made by gulp
+      .then(()=>{console.log('new message after service worker');})
+      .catch((err) => {console.log(`error on loading sw: ${err}`);});
   }
+  console.log('waiting for the servcie worker');
+
 };
 
 // open a connection to the server for live updates
