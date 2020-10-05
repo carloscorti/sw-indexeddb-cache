@@ -1,3 +1,5 @@
+const newCacheVersion = 'wittr-static-v2';
+
 self.addEventListener('install', (event) => {
   const urlsToCache = [
     '/',
@@ -9,7 +11,21 @@ self.addEventListener('install', (event) => {
   ];
 
   event.waitUntil(
-    caches.open('wittr-static-v1').then(cache => cache.addAll(urlsToCache))
+    caches.open(newCacheVersion).then(cache => cache.addAll(urlsToCache))
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys()
+      .then(cacheList => {
+        cacheList.filter(cacheName => cacheName.startsWith('wittr-') && cacheName != newCacheVersion)
+          .map(cacheName => {
+            caches.delete(cacheName);
+          });
+        }
+      )
+    // caches.delete('wittr-static-v1')
   );
 });
 
