@@ -1,3 +1,4 @@
+import { reject } from 'lodash';
 import WindowMessenger from './WindowMessenger';
 
 const appOrigin = new URL(location.href);
@@ -33,7 +34,7 @@ function figureOutConnectionType() {
 
   return Promise.race([
     fetch(new URL('/ping', appOrigin)),
-    new Promise(r => setTimeout(r, 4000))
+    new Promise(reject => setTimeout(reject, 5000))
   ]).then(_ => {
     const duration = performance.now() - start;
 

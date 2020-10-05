@@ -6,6 +6,7 @@ import os from 'os';
 import compression from 'compression';
 import {Server as WebSocketServer} from 'ws';
 import http from 'http';
+import https from 'https';
 import url from 'url';
 import net from 'net';
 import Throttle from 'throttle';
@@ -30,7 +31,7 @@ const appServerPath = os.platform() == 'win32' ?
 const connectionProperties = {
   perfect: {bps: 100000000, delay: 0},
   slow: {bps: 4000, delay: 3000},
-  'lie-fi': {bps: 1, delay: 10000}
+  'lie-fi': {bps: 1, delay: 4000}
 };
 
 const imgSizeToFlickrSuffix = {
@@ -99,8 +100,10 @@ export default class Server {
     });
 
     this._app.get('/photos/:farm-:server-:id-:secret-:type.jpg', (req, res) => {
-      const flickrUrl = `http://farm${req.params.farm}.staticflickr.com/${req.params.server}/${req.params.id}_${req.params.secret}_${imgSizeToFlickrSuffix[req.params.type]}.jpg`;
-      const flickrRequest = http.request(flickrUrl, flickrRes => {
+      // const flickrUrl = `http://farm${req.params.farm}.staticflickr.com/${req.params.server}/${req.params.id}_${req.params.secret}_${imgSizeToFlickrSuffix[req.params.type]}.jpg`;
+      // const flickrRequest = http.request(flickrUrl, flickrRes => {
+      const flickrUrl = `https://live.staticflickr.com/${req.params.server}/${req.params.id}_${req.params.secret}_${imgSizeToFlickrSuffix[req.params.type]}.jpg`;
+      const flickrRequest = https.request(flickrUrl, flickrRes => {
         flickrRes.pipe(res);
       });
 
