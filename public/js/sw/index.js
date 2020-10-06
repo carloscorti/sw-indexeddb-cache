@@ -19,10 +19,12 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
       .then(cacheList => {
-        cacheList.filter(cacheName => cacheName.startsWith('wittr-') && cacheName != newCacheVersion)
-          .map(cacheName => {
-            caches.delete(cacheName);
-          });
+        return Promise.all(
+          cacheList.filter(cacheName => cacheName.startsWith('wittr-') && cacheName != newCacheVersion)
+            .map(cacheName => {
+              caches.delete(cacheName);
+            }
+          ));
         }
       )
     // caches.delete('wittr-static-v1')
