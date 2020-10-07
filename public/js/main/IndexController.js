@@ -13,11 +13,62 @@ export default function IndexController(container) {
 
 
 // register service wotrker
-IndexController.prototype._registerServiceWorker = () => {
+IndexController.prototype._registerServiceWorker = function() {
+  let indexController = this;
   if (navigator.serviceWorker) {
     navigator.serviceWorker.register('/sw.js') // regards sw.js in build folder made by gulp
-      .then(()=>{console.log('new message after service worker');})
-      .catch((err) => {console.log(`error on loading sw: ${err}`);});
+      .then((reg)=>{
+        if (navigator.serviceWorker.controller){
+          console.log('service worker has control, :)¡¡');
+  
+          reg.addEventListener('updatefound', () => {
+            // if (reg.installing) {
+              const newSw = reg.installing;
+              console.log('new service worker installing');
+              newSw.addEventListener('statechange', () => {
+                if (newSw.state === 'installed'){
+                console.log('service worker waiting, close and open tag');
+                const toast = indexController._toastsView.show('just appear a new service worker¡¡¡¡', {buttons: ['Update New']});
+                toast.answer.then(msg=>newSw.postMessage(msg));
+                }
+              });
+              return;
+            // }
+          });
+
+          if (reg.waiting) {
+            const waitSw = reg.waiting;
+            console.log('service worker waiting, update¡¡¡¡');
+            const toast = indexController._toastsView.show('service worker waiting, update¡¡¡¡', {buttons: ['Update']});
+            toast.answer.then(msg=>waitSw.postMessage(msg))
+          }
+          return;
+
+        }
+            console.log('no service worker avaiable, fetching fron the network');
+            if (reg.installing){
+              const initSw = reg.installing;
+              console.log('service worker installing');
+              initSw.addEventListener('statechange', () => {
+                if (initSw.state === 'activated'){
+                  console.log('first service worker aviable, please reload');
+                  const toast = indexController._toastsView.show('first service worker aviable', {buttons: ['Reload']});
+                  toast.answer.then(msg=>{
+                    window.location.reload();
+                    initSw.postMessage(msg);
+                  });
+                } 
+              });
+            }
+            return;
+      })
+      .catch((err) => {
+        return console.log(`error on loading sw: ${err}`);
+      });
+
+    navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+      window.location.reload();
+    });
   }
   console.log('waiting for the servcie worker');
 

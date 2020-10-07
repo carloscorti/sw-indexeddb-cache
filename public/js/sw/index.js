@@ -1,4 +1,4 @@
-const newCacheVersion = 'wittr-static-v2';
+const newCacheVersion = 'wittr-static-v3';
 
 self.addEventListener('install', (event) => {
   const urlsToCache = [
@@ -26,26 +26,26 @@ self.addEventListener('activate', (event) => {
             }
           ));
         }
-      )
+      ),
     // caches.delete('wittr-static-v1')
   );
 });
+
+self.addEventListener('message', (event) => {
+  console.log(event.data);
+  console.log(event.data.startsWith('Update'));
+  if (event.data.startsWith('Update')){
+    self.skipWaiting();
+  }
+});
+
+
 
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then(res=>{
       return res ? res : fetch(event.request);
     })
-    // caches.open('wittr-static-v1')
-    //   .then(cache=>cache.keys())
-    //   .then(keys=>{
-    //     if (keys.map(key=>key.url).includes(event.request.url)) {
-    //     // if (keys.includes(event.request)) {
-    //       console.log('from cache')
-    //       return caches.match(event.request);
-    //     }
-    //     return fetch(event.request);
-    //   })
   );
 
 
@@ -69,4 +69,7 @@ self.addEventListener('fetch', (event) => {
     //   return new Response('cant make the request');
     // })
   // );
+
+
+
 });
