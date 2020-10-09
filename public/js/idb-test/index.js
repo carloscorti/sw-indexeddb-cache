@@ -110,6 +110,24 @@ dbPromise.then((db) => {
   console.log('Perosons indexed by animal query by cat: ', persons);
 });
 
+const displayNme = (cursor) => {
+  if (!cursor) return;
+  console.log(`Cursor at: ${cursor.value.name}`);
+  // cursor represents an indexeddb row, i could do
+  // cursor.update(newValue)
+  // cursor.delete()
+  return cursor.continue().then(displayNme);
+  }
+
+dbPromise.then((db) => {
+  const transax = db.transaction('people');
+  const peopleStore = transax.objectStore('people');
+  const animalIndex = peopleStore.index('animal');
+  return animalIndex.openCursor();
+})
+  .then((cursor)=> cursor.advance(2))
+  .then(displayNme)
+  .then(()=>console.log('Cursor Done'));
 
 
 
