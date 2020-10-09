@@ -1,8 +1,8 @@
-const newCacheVersion = 'wittr-static-v3';
+const newCacheVersion = 'wittr-static-v4';
 
 self.addEventListener('install', (event) => {
   const urlsToCache = [
-    '/',
+    '/skeleton',
     'js/main.js',
     'css/main.css',
     '/imgs/icon.png',
@@ -42,34 +42,16 @@ self.addEventListener('message', (event) => {
 
 
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then(res=>{
-      return res ? res : fetch(event.request);
-    })
-  );
-
-
-
-  
-  // event.respondWith(
-  //   caches.match(event.request)
-
-
-    // caches.open('wittr-static-v1').then(cache=>cache.keys()).then(keys=>fetch(keys[0].url))
-    
-    
-    // fetch(event.request).then(res => {
-    //   if(res.status==404){
-    //     console.log('not found');
-    //     return fetch('imgs/dr-evil.gif');
-    //   }
-    //   return res;
-    // }).catch((err)=>{
-    //   console.log(`not network: ${err}`);
-    //   return new Response('cant make the request');
-    // })
-  // );
-
-
-
+  switch (event.request.url) {
+    case `${location.origin}/`:
+      return event.respondWith(
+        caches.match('/skeleton')
+      );
+    default:
+      return event.respondWith(
+        caches.match(event.request).then(res=>{
+          return res ? res : fetch(event.request);
+        })
+      );
+  }
 });
