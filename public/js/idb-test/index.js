@@ -110,14 +110,8 @@ dbPromise.then((db) => {
   console.log('Perosons indexed by animal query by cat: ', persons);
 });
 
-// dbPromise.then((db) => {
-//   const transax = db.transaction('people');
-//   const peopleStore = transax.objectStore('people');
-//   const animalIndex = peopleStore.index('age');
-//   return animalIndex.getAll();
-// }).then((persons)=> {
-//   console.log('Perosons indexed by age: ', persons);
-// });
+
+
 
 
  

@@ -47,6 +47,10 @@ self.addEventListener('fetch', (event) => {
       return event.respondWith(
         caches.match('/skeleton')
       );
+    case `${location.origin}/?no-socket`:
+      return event.respondWith(
+        caches.match('/skeleton')
+      );
     default:
       return event.respondWith(
         caches.match(event.request).then(res=>{

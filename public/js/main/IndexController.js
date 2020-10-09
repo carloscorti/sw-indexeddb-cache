@@ -15,9 +15,37 @@ export default function IndexController(container) {
   this._postsView = new PostsView(this._container);
   this._toastsView = new ToastsView(this._container);
   this._lostConnectionToast = null;
-  this._openSocket();
+  this._dbPromise = openDataBase();
   this._registerServiceWorker();
+
+  // const indexController = this;
+
+  this._showCacheMessages().then(()=>{
+    // indexController._openSocket();
+    this._openSocket();
+  });
 }
+
+IndexController.prototype._showCacheMessages = function() {  
+  console.log('througth show cache message');
+  const indexController = this;
+
+  return this._dbPromise.then((db) => {
+    // if (!db || indexController._postsView.showingPosts()) return console.log('no messages');
+    if (!db) return console.log('no data base');
+
+    const transax = db.transaction('wittrs');
+    const wittrsStore = transax.objectStore('wittrs');
+    const wittrsDateIndex = wittrsStore.index('by-date');
+    return wittrsDateIndex.getAll();
+  }).then((messages)=> {
+    if (!messages.length) return console.log('no messages');
+    console.log('first msgs from indexed');
+    indexController._postsView.addPosts(messages.reverse());
+    return;
+  });
+}
+
 
 
 // register service wotrker
