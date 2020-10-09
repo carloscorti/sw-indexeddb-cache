@@ -2,6 +2,14 @@ import PostsView from './views/Posts';
 import ToastsView from './views/Toasts';
 import idb from 'idb';
 
+const openDataBase = () => {
+  if(!navigator.serviceWorker) return Promise.resolve();
+  return idb.open('wittr', 1, function(upgradeDb) {
+        const wittrsStore = upgradeDb.createObjectStore('wittrs', {keyPath: 'id'});
+        wittrsStore.createIndex('by-date', 'time');  
+      });
+  };
+
 export default function IndexController(container) {
   this._container = container;
   this._postsView = new PostsView(this._container);
@@ -40,7 +48,7 @@ IndexController.prototype._registerServiceWorker = function() {
             const waitSw = reg.waiting;
             console.log('service worker waiting, update¡¡¡¡');
             const toast = indexController._toastsView.show('service worker waiting, update¡¡¡¡', {buttons: ['Update']});
-            toast.answer.then(msg=>waitSw.postMessage(msg))
+            toast.answer.then(msg=>waitSw.postMessage(msg));
           }
           return;
 
@@ -120,7 +128,18 @@ IndexController.prototype._openSocket = function() {
 };
 
 // called when the web socket sends message data
-IndexController.prototype._onSocketMessage = function(data) {
+IndexController.prototype._onSocketMessage = function(data) {      
   var messages = JSON.parse(data);
+  openDataBase().then((db) => {
+    if (!db) return;
+    const transax = db.transaction('wittrs', 'readwrite');
+    const wittrsStore = transax.objectStore('wittrs');  
+    messages.forEach(msg => {
+      wittrsStore.put(msg);
+    });
+    return transax.complete;
+  }).then(()=> {
+    console.log(`Added post: to wittrs`);
+  });
   this._postsView.addPosts(messages);
 };
