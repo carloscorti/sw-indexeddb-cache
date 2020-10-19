@@ -1,4 +1,4 @@
-const newCacheVersion = 'wittr-static-v7';
+const newCacheVersion = 'wittr-static-v8';
 const contentImgsCache = 'wittr-content-imgs';
 
 const allCaches = [
@@ -40,8 +40,8 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('message', (event) => {
-  console.log(event.data);
-  console.log(event.data.startsWith('Update'));
+  // console.log(event.data);
+  // console.log(event.data.startsWith('Update'));
   if (event.data.startsWith('Update')){
     self.skipWaiting();
   }
@@ -60,7 +60,7 @@ self.addEventListener('fetch', (event) => {
         caches.match('/skeleton')
       );
     default:
-      console.log('default request')
+      // console.log('default request')
       if ((event.request.url.startsWith(`${location.origin}/photos/`) && event.request.url.endsWith('.jpg'))){
           return event.respondWith(
             caches.match(event.request.url.replace(/-\d+px\.jpg$/, ''))
@@ -71,12 +71,32 @@ self.addEventListener('fetch', (event) => {
                         .then((cache)=>{
                           cache.put(event.request.url.replace(/-\d+px\.jpg$/, ''), netwkRes.clone());
                           return netwkRes;
-                        })
-
+                        });
                     });
                   })
-              )
+              );
       }
+      if ((event.request.url.startsWith(`${location.origin}/avatars/`))){
+        const urlPath = new URL(event.request.url)
+        const urlCachePath = urlPath.pathname.replace(/-\d+x\.jpg$/, '');
+        // console.log(urlPath)
+        console.log(urlCachePath);
+
+        return event.respondWith(
+          caches.match(urlCachePath)
+            .then((res)=>{
+              const networkResponse = fetch(event.request)
+                .then(netwkRes=>caches.open(contentImgsCache)
+                  .then(cache=>{
+                    cache.put(urlCachePath, netwkRes.clone());
+                    return netwkRes;
+                  })
+                );
+              return res || networkResponse;
+            })
+        );
+      }
+
       return event.respondWith(
         caches.match(event.request).then(res=>{
           return res ? res : fetch(event.request);

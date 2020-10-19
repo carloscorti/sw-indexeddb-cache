@@ -19,17 +19,58 @@ export default function IndexController(container) {
   this._lostConnectionToast = null;
   this._dbPromise = openDataBase();
   this._registerServiceWorker();
+  this._cleanPhotoCache();
 
   // const indexController = this;
 
   this._showCacheMessages().then(()=>{
     // indexController._openSocket();
     this._openSocket();
+
+  setInterval(() => this._cleanPhotoCache(), 1000*60);
   });
 }
 
+IndexController.prototype._cleanPhotoCache = function() {
+  // console.log('clean db');
+  const contentImgsCache = 'wittr-content-imgs';
+
+  this._dbPromise
+    .then((db)=>{
+      // console.log(db);
+      const transax = db.transaction('wittrs');
+      const wittrsStore = transax.objectStore('wittrs');
+      return wittrsStore.getAll();
+    })
+    .then((wittrs)=>{
+      const photos = [];
+      wittrs.forEach(wittr=>{
+        if (wittr.photo) photos.push(wittr.photo);
+        if (wittr.avatar) photos.push(wittr.avatar);
+      });
+      // console.log(photos);
+      caches.open(contentImgsCache)
+        .then(cache => cache.keys()
+          .then(keys=>{
+            const {origin} = location;
+            // console.log(origin)
+            // console.log(keys);
+            keys.forEach((key)=>{
+              const photoParam = key.url.replace(origin, '').trim();
+              const photoSet = [...new Set(photos)]
+              if(!photoSet.includes(photoParam)){
+                // console.log(key.url);
+                cache.delete(key);
+              }
+            });
+          })
+        );
+    });
+};
+
+
 IndexController.prototype._showCacheMessages = function() {  
-  console.log('througth show cache message');
+  // console.log('througth show cache message');
   const indexController = this;
 
   return this._dbPromise.then((db) => {
@@ -43,7 +84,7 @@ IndexController.prototype._showCacheMessages = function() {
   }).then((messages)=> {
     // console.log(messages);
     if (!messages.length) return console.log('no messages');
-    console.log('first msgs from indexed');
+    // console.log('first msgs from indexed');
     indexController._postsView.addPosts(messages.reverse());
     return;
   });
@@ -58,7 +99,7 @@ IndexController.prototype._registerServiceWorker = function() {
     navigator.serviceWorker.register('/sw.js') // regards sw.js in build folder made by gulp
       .then((reg)=>{
         if (navigator.serviceWorker.controller){
-          console.log('service worker has control, :)¡¡');
+          // console.log('service worker has control, :)¡¡');
   
           reg.addEventListener('updatefound', () => {
             // if (reg.installing) {
@@ -77,7 +118,7 @@ IndexController.prototype._registerServiceWorker = function() {
 
           if (reg.waiting) {
             const waitSw = reg.waiting;
-            console.log('service worker waiting, update¡¡¡¡');
+            // console.log('service worker waiting, update¡¡¡¡');
             const toast = indexController._toastsView.show('service worker waiting, update¡¡¡¡', {buttons: ['Update']});
             toast.answer.then(msg=>waitSw.postMessage(msg));
           }
@@ -87,10 +128,10 @@ IndexController.prototype._registerServiceWorker = function() {
             console.log('no service worker avaiable, fetching fron the network');
             if (reg.installing){
               const initSw = reg.installing;
-              console.log('service worker installing');
+              // console.log('service worker installing');
               initSw.addEventListener('statechange', () => {
                 if (initSw.state === 'activated'){
-                  console.log('first service worker aviable, please reload');
+                  // console.log('first service worker aviable, please reload');
                   const toast = indexController._toastsView.show('first service worker aviable', {buttons: ['Reload']});
                   toast.answer.then(msg=>{
                     window.location.reload();
@@ -109,7 +150,7 @@ IndexController.prototype._registerServiceWorker = function() {
       window.location.reload();
     });
   }
-  console.log('waiting for the servcie worker');
+  // console.log('waiting for the servcie worker');
 
 };
 
@@ -175,8 +216,11 @@ IndexController.prototype._onSocketMessage = function(data) {
 
     
     const deleteRowReverse = (cursor)=>{
-        if (!cursor) return console.log('out');
-        console.log(`deleted ${cursor.value.id}`);
+        if (!cursor) {
+          // console.log('out')
+          return;
+        };
+        // console.log(`deleted ${cursor.value.id}`);
         cursor.delete();
         return cursor.continue().then(deleteRowReverse);
       };
@@ -185,7 +229,7 @@ IndexController.prototype._onSocketMessage = function(data) {
      .then(cursor=>cursor.advance(30))
      .then(deleteRowReverse)
      .then(()=> {
-        console.log(`Wittrs updated`);
+        // console.log(`Wittrs updated`);
       });
 
   //   const indexedWitterStore = wittrsStore.index('by-date');
