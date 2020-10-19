@@ -3,7 +3,9 @@ import ToastsView from './views/Toasts';
 import idb from 'idb';
 
 const openDataBase = () => {
-  if(!navigator.serviceWorker) return Promise.resolve();
+  if(!navigator.serviceWorker){
+    return Promise.resolve();
+  } 
   return idb.open('wittr', 1, function(upgradeDb) {
         const wittrsStore = upgradeDb.createObjectStore('wittrs', {keyPath: 'id'});
         wittrsStore.createIndex('by-date', 'time');  
@@ -39,12 +41,13 @@ IndexController.prototype._showCacheMessages = function() {
     const wittrsDateIndex = wittrsStore.index('by-date');
     return wittrsDateIndex.getAll();
   }).then((messages)=> {
+    // console.log(messages);
     if (!messages.length) return console.log('no messages');
     console.log('first msgs from indexed');
     indexController._postsView.addPosts(messages.reverse());
     return;
   });
-}
+};
 
 
 
@@ -156,18 +159,73 @@ IndexController.prototype._openSocket = function() {
 };
 
 // called when the web socket sends message data
-IndexController.prototype._onSocketMessage = function(data) {      
+IndexController.prototype._onSocketMessage = function(data) {
+  // const indexController = this;
+
   var messages = JSON.parse(data);
-  openDataBase().then((db) => {
-    if (!db) return;
+  this._postsView.addPosts(messages);
+  
+  this._dbPromise.then((db) => {
+    if (!db) return console.log('no db');
     const transax = db.transaction('wittrs', 'readwrite');
     const wittrsStore = transax.objectStore('wittrs');  
     messages.forEach(msg => {
       wittrsStore.put(msg);
     });
-    return transax.complete;
-  }).then(()=> {
-    console.log(`Added post: to wittrs`);
+
+    
+    const deleteRowReverse = (cursor)=>{
+        if (!cursor) return console.log('out');
+        console.log(`deleted ${cursor.value.id}`);
+        cursor.delete();
+        return cursor.continue().then(deleteRowReverse);
+      };
+
+     wittrsStore.index('by-date').openCursor(null, 'prev')
+     .then(cursor=>cursor.advance(30))
+     .then(deleteRowReverse)
+     .then(()=> {
+        console.log(`Wittrs updated`);
+      });
+
+  //   const indexedWitterStore = wittrsStore.index('by-date');
+  //   return indexedWitterStore.getAll();
+  //   }).then((wittrs)=> {
+  //     const slicedMsgs = wittrs.slice(-30);
+  //     console.log('Updated Wittrs: ', slicedMsgs);
+  //     indexController._dbPromise.then((db) => {
+  //       if (!db) return console.log('no db');
+  //       const transax = db.transaction('wittrs', 'readwrite');
+  //       const wittrsStore = transax.objectStore('wittrs');
+  //       wittrsStore.clear();
+  //       slicedMsgs.forEach(msg => {
+  //         wittrsStore.put(msg);
+  //       });
+  //     });
+  //   });
+  // };
+
+    // const deleteRow = (cursor)=>{
+    //     if (!cursor) return console.log('out');
+    //     console.log(`deleted ${cursor.value.id}`);
+    //     cursor.delete();
+    //     return cursor.continue();
+    //   };
+
+    // wittrsStore.count().then((valCount)=> {
+    //   console.log(valCount);
+    //   if (valCount>30){
+    //     let chainInit = wittrsStore.index('by-date').openCursor();
+    //     const exededValue = valCount - 30;
+    //     for (let i=0; i<exededValue; i++){
+    //         chainInit = chainInit.then(deleteRow);
+    //     }
+    //     return chainInit;
+    //   }
+    //   return console.log('not deleting');
+    //   }).then(()=> {
+    //     console.log(`Wittrs updated`);
+    //   });
+
   });
-  this._postsView.addPosts(messages);
 };

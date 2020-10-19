@@ -1,4 +1,11 @@
-const newCacheVersion = 'wittr-static-v4';
+const newCacheVersion = 'wittr-static-v7';
+const contentImgsCache = 'wittr-content-imgs';
+
+const allCaches = [
+  newCacheVersion,
+  contentImgsCache
+];
+
 
 self.addEventListener('install', (event) => {
   const urlsToCache = [
@@ -20,7 +27,8 @@ self.addEventListener('activate', (event) => {
     caches.keys()
       .then(cacheList => {
         return Promise.all(
-          cacheList.filter(cacheName => cacheName.startsWith('wittr-') && cacheName != newCacheVersion)
+          cacheList.filter(cacheName => cacheName.startsWith('wittr-') && cacheName != newCacheVersion && cacheName != contentImgsCache)
+          // cacheList.filter(cacheName => cacheName.startsWith('wittr-') && !allCaches.includes(cacheName))
             .map(cacheName => {
               caches.delete(cacheName);
             }
@@ -42,16 +50,33 @@ self.addEventListener('message', (event) => {
 
 
 self.addEventListener('fetch', (event) => {
+  // console.log(event.request.url)
+  // console.log((event.request.url.startsWith(`${location.origin}/photos/`) && event.request.url.endsWith('.jpg')));
+
   switch (event.request.url) {
     case `${location.origin}/`:
-      return event.respondWith(
-        caches.match('/skeleton')
-      );
     case `${location.origin}/?no-socket`:
       return event.respondWith(
         caches.match('/skeleton')
       );
     default:
+      console.log('default request')
+      if ((event.request.url.startsWith(`${location.origin}/photos/`) && event.request.url.endsWith('.jpg'))){
+          return event.respondWith(
+            caches.match(event.request.url.replace(/-\d+px\.jpg$/, ''))
+                .then((res)=>{
+                  return res ? res : 
+                    fetch(event.request).then((netwkRes)=>{
+                      return caches.open(contentImgsCache)
+                        .then((cache)=>{
+                          cache.put(event.request.url.replace(/-\d+px\.jpg$/, ''), netwkRes.clone());
+                          return netwkRes;
+                        })
+
+                    });
+                  })
+              )
+      }
       return event.respondWith(
         caches.match(event.request).then(res=>{
           return res ? res : fetch(event.request);
